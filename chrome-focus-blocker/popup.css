@@ -1,0 +1,125 @@
+:root {
+  --bg: #0f1720;
+  --panel: #0b1220;
+  --text: #e6eef8;
+  --muted: #9aa8b6;
+  --accent: #3b82f6;
+  --danger: #ef4444;
+}
+
+body {
+  margin: 0;
+  padding: 12px;
+  width: 340px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial;
+  font-size: 13px;
+}
+
+.wrap h2 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+}
+
+.row label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#siteInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--panel);
+  color: var(--text);
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+button {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+#addBtn {
+  background: var(--accent);
+  color: white;
+  flex: 1;
+}
+
+#addCurrentBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.msg {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 18px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  margin: 12px 0;
+}
+
+.list {
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.site-name {
+  font-size: 13px;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.del-btn {
+  margin-left: 10px;
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.footer {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
