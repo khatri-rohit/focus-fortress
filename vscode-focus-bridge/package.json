@@ -1,0 +1,58 @@
+{
+  "name": "vscode-focus-bridge",
+  "displayName": "VS Code Focus Bridge",
+  "publisher": "RohitKhatri",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "package": "vsce package"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Focus Bridge",
+      "properties": {
+        "focusBridge.port": {
+          "type": "number",
+          "default": 9876,
+          "description": "Local WebSocket server port for Chrome to connect to."
+        },
+        "focusBridge.heartbeatIntervalSec": {
+          "type": "number",
+          "default": 10,
+          "description": "Seconds between active heartbeats while VS Code is active."
+        },
+        "focusBridge.inactivityTimeoutSec": {
+          "type": "number",
+          "default": 120,
+          "description": "Seconds of inactivity after which 'active' becomes false."
+        },
+        "focusBridge.secretToken": {
+          "type": "string",
+          "default": "",
+          "description": "Optional secret token that clients must send as first message for simple auth."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.6",
+    "@types/ws": "^8.18.1",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3",
+    "vsce": "^2.15.0",
+    "vscode": "^1.1.37"
+  }
+}
