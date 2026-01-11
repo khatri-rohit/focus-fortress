@@ -2,10 +2,6 @@
 
 **Stay focused while coding. Block distracting websites automatically when VS Code is active.**
 
-<p align="center">
-  <img src="docs/demo.gif" alt="Demo" width="600">
-</p>
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -26,7 +22,9 @@ code --install-extension RohitKhatri.vscode-focus-bridge
 
 #### Step 2: Install Chrome Extension
 
-Download the latest release from [GitHub Releases](https://github.com/RohitKhatri/focus-fortress/releases) and load it as an unpacked extension in Chrome.
+### Build from Source
+
+Download the latest release from [GitHub Releases](https://github.com/khatri-rohit/focus-fortress.git) and load it as an unpacked extension in Chrome.
 
 Or build it yourself:
 
@@ -37,9 +35,13 @@ npm run build:chrome
 # Load dist/ as unpacked extension in Chrome
 ```
 
+and load dist/chrome as an unpacked extension in Chrome. (supported for chrome, edge and brave).
+
+and if using Firefox, load dist/firefox as an unpacked extension in Firefox.
+
 #### Step 3: Configure
 
-1. Open VS Code → Verify "FocusBridge: running (9876)" in status bar
+1. Open VS Code → Verify "Focus Fortress: running (9876)" in status bar
 2. Open Chrome → Click extension icon → Add sites to block
 3. Start coding! Sites are blocked automatically ⚡
 
@@ -98,7 +100,7 @@ graph LR
 - Check VS Code status bar for server status
 - Try restarting VS Code and Chrome
 
-[Full troubleshooting guide →](docs/troubleshooting.md)
+[Report Troubleshooting](https://thisisrohit.com/contact)
 
 ## 🔒 Privacy
 
@@ -117,11 +119,11 @@ graph LR
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md)
+Don't hesitate to [open an issue](https://github.com/khatri-rohit/focus-fortress/issues/new) or [submit a pull request](https://github.com/khatri-rohit/focus-fortress/pulls) if you have any suggestions or improvements.
 
 ## 📝 License
 
-MIT © [Rohit Khatri](LICENSE)
+MIT © [Rohit Khatri](https://github.com/khatri-rohit)
 
 ---
 

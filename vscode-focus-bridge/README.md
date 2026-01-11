@@ -20,14 +20,14 @@ A VS Code extension that runs a local WebSocket server to broadcast your coding 
 
 ### Manual Installation
 
-1. Download the `.vsix` file from [GitHub Releases](https://github.com/RohitKhatri/focus-fortress/releases)
+1. Download the `.vsix` file from [GitHub Releases](https://github.com/khatri-rohit/focus-fortress/blob/main/vscode-focus-bridge/vscode-focus-bridge-0.0.3.vsix)
 2. In VS Code: `Extensions` → `...` → `Install from VSIX...`
 3. Select the downloaded file
 
 ### Build from Source
 
 ```bash
-git clone https://github.com/RohitKhatri/focus-fortress.git
+git clone https://github.com/khatri-rohit/focus-fortress.git
 cd focus-fortress/vscode-focus-bridge
 npm install
 npm run compile
@@ -131,7 +131,7 @@ Otherwise, clients can request status directly:
 
 ## Companion Extension
 
-This VS Code extension works with the [Focus Fortress Chrome Extension](https://github.com/RohitKhatri/focus-fortress/tree/main/chrome-focus-blocker) to automatically block distracting websites when you're coding.
+This VS Code extension works with the [Focus Fortress Chrome Extension](https://github.com/khatri-rohit/focus-fortress/tree/main/chrome-focus-blocker) to automatically block distracting websites when you're coding.
 
 ## Development
 
@@ -200,7 +200,7 @@ Generates a `.vsix` file for installation.
 
 ## License
 
-MIT © [Rohit Khatri](https://github.com/RohitKhatri)
+MIT © [Rohit Khatri](https://github.com/khatri-rohit)
 
 ## Contributing
 
@@ -212,5 +212,5 @@ MIT © [Rohit Khatri](https://github.com/RohitKhatri)
 
 ## Related
 
-- [Focus Fortress Chrome Extension](https://github.com/RohitKhatri/focus-fortress/tree/main/chrome-focus-blocker)
+- [Focus Fortress Chrome Extension](https://github.com/khatri-rohit/focus-fortress/tree/main/chrome-focus-blocker)
 - [WebSocket Protocol RFC](https://tools.ietf.org/html/rfc6455)
