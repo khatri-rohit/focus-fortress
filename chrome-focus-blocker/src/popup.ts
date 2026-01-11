@@ -20,6 +20,7 @@ async function loadAndRender() {
     const res: any = await browser.runtime.sendMessage({
       cmd: "popupRequestStatus",
     });
+    // console.log(res);
     wsStatusEl.textContent = res.wsConnected ? "Connected" : "Disconnected";
     focusStatusEl.textContent = res.focusMode ? "ON" : "OFF";
     renderBlockedList(res.blockedSites || []);

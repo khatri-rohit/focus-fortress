@@ -33,227 +33,303 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.FocusBridgeServer = void 0;
 exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const ws_1 = require("ws");
-const http = __importStar(require("http"));
-let wss;
-let clients = new Set();
-let server;
-let activeState = false;
-let activityTimer;
-let heartbeatTimer;
 /**
- * Send JSON to all authenticated clients.
+ * FocusBridgeServer
+ * - Manages the WebSocket server lifecycle (start/stop/restart).
+ * - Sends heartbeat/status messages to connected clients.
+ * - Tracks "active" state (user activity) and supports inactivity timeout.
+ * - Provides programmatic control via commands.
  */
-function broadcast(obj) {
-    const data = JSON.stringify(obj);
-    for (const c of clients) {
-        if (c.authenticated && c.socket.readyState === c.socket.OPEN) {
-            try {
-                c.socket.send(data);
+class FocusBridgeServer {
+    constructor(ctx) {
+        this.ctx = ctx;
+        this.server = null;
+        this.clients = new Set();
+        this.heartbeatTimer = null;
+        this.inactivityTimer = null;
+        this.isActive = false;
+        this.disposables = [];
+        this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+        this.statusBarItem.tooltip =
+            "VS Code Focus Fortress — WebSocket server status";
+        this.statusBarItem.show();
+        this.config = vscode.workspace.getConfiguration("focusFortress");
+        this.port = Number(this.config.get("port", 9876));
+        this.heartbeatIntervalSec = Number(this.config.get("heartbeatIntervalSec", 10));
+        this.inactivityTimeoutSec = Number(this.config.get("inactivityTimeoutSec", 120));
+        this.secretToken = String(this.config.get("secretToken", "") || "");
+        this.autoStart = Boolean(this.config.get("autoStart", true));
+        // Listen for config changes
+        this.disposables.push(vscode.workspace.onDidChangeConfiguration((e) => {
+            if (e.affectsConfiguration("focusFortress")) {
+                this.reloadConfig();
             }
-            catch (e) {
-                /* ignore send errors */
-            }
-        }
+        }));
+        // Consider user activity events to keep server "active"
+        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => this.onUserActivity()), vscode.window.onDidChangeTextEditorSelection(() => this.onUserActivity()), vscode.workspace.onDidChangeTextDocument(() => this.onUserActivity()), vscode.window.onDidChangeWindowState((st) => {
+            // window focus/unfocus = activity toggle
+            if (st.focused)
+                this.onUserActivity();
+            else
+                this.scheduleInactivityTimeout();
+        }));
+        this.updateStatusBar();
     }
-}
-/**
- * Update active state and broadcast change.
- */
-function setActiveState(next) {
-    if (activeState === next)
-        return;
-    activeState = next;
-    broadcast({ type: "status", active: activeState, ts: Date.now() });
-}
-/**
- * Reset inactivity timer (called on real editor activity).
- */
-function resetInactivityTimeout(ctx) {
-    const cfg = vscode.workspace.getConfiguration("focusBridge");
-    const timeoutSec = cfg.get("inactivityTimeoutSec", 120);
-    if (activityTimer)
-        clearTimeout(activityTimer);
-    activityTimer = setTimeout(() => {
-        setActiveState(false);
-    }, timeoutSec * 1000);
-    // When there's activity, set active immediately
-    setActiveState(true);
-}
-/**
- * Start heartbeat loop while editor is active; used to continuously tell clients we're active.
- */
-function startHeartbeat(ctx) {
-    stopHeartbeat();
-    const cfg = vscode.workspace.getConfiguration("focusBridge");
-    const interval = cfg.get("heartbeatIntervalSec", 10);
-    heartbeatTimer = setInterval(() => {
-        if (activeState) {
-            broadcast({ type: "heartbeat", active: true, ts: Date.now() });
+    reloadConfig() {
+        this.config = vscode.workspace.getConfiguration("focusFortress");
+        this.port = Number(this.config.get("port", 9876));
+        this.heartbeatIntervalSec = Number(this.config.get("heartbeatIntervalSec", 10));
+        this.inactivityTimeoutSec = Number(this.config.get("inactivityTimeoutSec", 120));
+        this.secretToken = String(this.config.get("secretToken", "") || "");
+        const newAutoStart = Boolean(this.config.get("autoStart", true));
+        // If autoStart preference changed
+        if (newAutoStart !== this.autoStart) {
+            this.autoStart = newAutoStart;
+            if (this.autoStart && !this.server)
+                this.start();
+            if (!this.autoStart && this.server)
+                this.stop();
         }
-    }, interval * 1000);
-}
-function stopHeartbeat() {
-    if (heartbeatTimer) {
-        clearInterval(heartbeatTimer);
-        heartbeatTimer = undefined;
-    }
-}
-/**
- * Setup WebSocket server on configured port.
- */
-async function startServer(ctx) {
-    const cfg = vscode.workspace.getConfiguration("focusBridge");
-    const port = cfg.get("port", 9876);
-    const secretToken = cfg.get("secretToken", "") || "";
-    // Prevent multiple starts
-    if (wss)
-        return;
-    // Create HTTP server and upgrade to WebSocket (gives more control on same host)
-    server = http.createServer();
-    wss = new ws_1.WebSocketServer({ server });
-    wss.on("connection", (socket) => {
-        const client = { socket, authenticated: secretToken === "" };
-        clients.add(client);
-        // If no secret, mark authenticated immediately
-        if (client.authenticated) {
-            // immediate status push
-            socket.send(JSON.stringify({ type: "status", active: activeState, ts: Date.now() }));
+        // If server is running and port changed, restart automatically
+        if (this.server &&
+            this.port !== Number(this.config.get("port", 9876))) {
+            this.restart();
         }
-        socket.on("message", (msg) => {
-            try {
-                const text = msg.toString();
-                // If secret token is configured, first message must be { type: 'auth', token: '...' }
-                if (!client.authenticated && secretToken) {
-                    try {
-                        const parsed = JSON.parse(text);
-                        if ((parsed === null || parsed === void 0 ? void 0 : parsed.type) === "auth" && (parsed === null || parsed === void 0 ? void 0 : parsed.token) === secretToken) {
-                            client.authenticated = true;
-                            socket.send(JSON.stringify({ type: "auth_ok" }));
-                            socket.send(JSON.stringify({
-                                type: "status",
-                                active: activeState,
-                                ts: Date.now(),
-                            }));
-                        }
-                        else {
-                            socket.send(JSON.stringify({ type: "auth_failed" }));
-                            socket.close();
-                        }
-                        return;
-                    }
-                    catch (e) {
-                        socket.send(JSON.stringify({ type: "auth_failed" }));
-                        socket.close();
-                        return;
-                    }
-                }
-                // Accept simple pings or requests
-                const parsed = JSON.parse(text);
-                if ((parsed === null || parsed === void 0 ? void 0 : parsed.type) === "ping") {
-                    socket.send(JSON.stringify({ type: "pong", ts: Date.now() }));
-                }
-                else if ((parsed === null || parsed === void 0 ? void 0 : parsed.type) === "request_status") {
-                    socket.send(JSON.stringify({
-                        type: "status",
-                        active: activeState,
-                        ts: Date.now(),
-                    }));
-                }
-            }
-            catch (err) {
-                // ignore invalid messages
-            }
-        });
-        socket.on("close", () => {
-            clients.delete(client);
-        });
-        socket.on("error", () => {
-            clients.delete(client);
-        });
-    });
-    server.on("error", (err) => {
-        vscode.window.showErrorMessage(`Focus Bridge server error: ${err.message}`);
-        stopServer();
-    });
-    server.listen(port, "127.0.0.1", () => {
-        console.log(`Focus Bridge WebSocket server listening on ws://127.0.0.1:${port}`);
-        vscode.window.showInformationMessage(`Focus Bridge server listening on port ${port}`);
-    });
-    // start heartbeat cron
-    startHeartbeat(ctx);
-}
-/**
- * Stop server and clear timers.
- */
-function stopServer() {
-    if (wss) {
-        try {
-            wss.close();
-        }
-        catch (e) { }
-        wss = undefined;
+        this.updateStatusBar();
     }
-    if (server) {
-        try {
-            server.close();
-        }
-        catch (e) { }
-        server = undefined;
-    }
-    for (const c of clients) {
-        try {
-            c.socket.close();
-        }
-        catch (e) { }
-    }
-    clients.clear();
-    stopHeartbeat();
-    if (activityTimer) {
-        clearTimeout(activityTimer);
-        activityTimer = undefined;
-    }
-    activeState = false;
-}
-/**
- * Called when extension is activated.
- */
-function activate(context) {
-    console.log("Focus Bridge activating...");
-    // Start server
-    startServer(context).catch((err) => {
-        vscode.window.showErrorMessage("Unable to start Focus Bridge server: " + String(err));
-    });
-    // Workspace/editor activity hooks
-    const onWindowState = vscode.window.onDidChangeWindowState((e) => {
-        if (e.focused) {
-            resetInactivityTimeout(context);
+    updateStatusBar() {
+        if (this.server) {
+            this.statusBarItem.text = `$(plug) FocusBridge: running (${this.port})`;
+            this.statusBarItem.color = undefined;
         }
         else {
-            // window unfocused -> start inactivity countdown
-            const cfg = vscode.workspace.getConfiguration("focusBridge");
-            const timeoutSec = cfg.get("inactivityTimeoutSec", 120);
-            if (activityTimer)
-                clearTimeout(activityTimer);
-            activityTimer = setTimeout(() => setActiveState(false), timeoutSec * 1000);
+            this.statusBarItem.text = `$(debug-disconnect) FocusBridge: stopped`;
+            this.statusBarItem.color = new vscode.ThemeColor("statusBarItem.warningForeground");
         }
-    });
-    const onEdit = vscode.workspace.onDidChangeTextDocument((e) => {
-        resetInactivityTimeout(context);
-    });
-    const onEditorChange = vscode.window.onDidChangeActiveTextEditor((e) => {
-        resetInactivityTimeout(context);
-    });
-    context.subscriptions.push(onWindowState, onEdit, onEditorChange);
-    // When extension deactivates, do cleanup via deactivate()
+    }
+    onUserActivity() {
+        // Reset inactivity timer and set active = true
+        this.setActive(true);
+        this.scheduleInactivityTimeout();
+    }
+    scheduleInactivityTimeout() {
+        if (this.inactivityTimer)
+            clearTimeout(this.inactivityTimer);
+        if (this.inactivityTimeoutSec <= 0)
+            return;
+        this.inactivityTimer = setTimeout(() => {
+            this.setActive(false);
+        }, this.inactivityTimeoutSec * 1000);
+    }
+    setActive(val) {
+        if (this.isActive === val)
+            return;
+        this.isActive = val;
+        // Immediately broadcast new status to clients
+        this.broadcast({ type: "status", active: this.isActive });
+        // Update status bar
+        this.updateStatusBar();
+    }
+    broadcast(payload) {
+        const str = JSON.stringify(payload);
+        for (const c of this.clients) {
+            try {
+                if (c.readyState === ws_1.WebSocket.OPEN)
+                    c.send(str);
+            }
+            catch {
+                // ignore
+            }
+        }
+    }
+    handleClientConnection(ws) {
+        let authed = false;
+        const tokenRequired = !!(this.secretToken && this.secretToken.length > 0);
+        // First message could be an auth token
+        const firstTimeout = setTimeout(() => {
+            // if token required and client didn't auth — close
+            if (tokenRequired && !authed) {
+                try {
+                    ws.close();
+                }
+                catch { }
+            }
+        }, 4000);
+        ws.on("message", (raw) => {
+            try {
+                const data = JSON.parse(String(raw));
+                if (!authed &&
+                    tokenRequired &&
+                    (data === null || data === void 0 ? void 0 : data.type) === "auth" &&
+                    (data === null || data === void 0 ? void 0 : data.token) === this.secretToken) {
+                    authed = true;
+                    // send immediate status
+                    try {
+                        ws.send(JSON.stringify({ type: "status", active: this.isActive }));
+                    }
+                    catch { }
+                }
+                else if (!tokenRequired) {
+                    // send status if not token required and first message is request
+                    if ((data === null || data === void 0 ? void 0 : data.type) === "request_status") {
+                        try {
+                            ws.send(JSON.stringify({ type: "status", active: this.isActive }));
+                        }
+                        catch { }
+                    }
+                }
+                else if (authed) {
+                    // handle other messages as needed in future
+                }
+            }
+            catch {
+                // ignore malformed
+            }
+        });
+        ws.on("close", () => {
+            clearTimeout(firstTimeout);
+            this.clients.delete(ws);
+        });
+        ws.on("error", () => {
+            clearTimeout(firstTimeout);
+            this.clients.delete(ws);
+        });
+        // Add to clients
+        this.clients.add(ws);
+        // Immediately send a status message (if allowed)
+        if (!tokenRequired) {
+            try {
+                ws.send(JSON.stringify({ type: "status", active: this.isActive }));
+            }
+            catch { }
+        }
+    }
+    start() {
+        var _a;
+        if (this.server) {
+            vscode.window.showInformationMessage("VS Code Focus Fortress server is already running.");
+            return false;
+        }
+        try {
+            this.server = new ws_1.WebSocketServer({ port: this.port });
+            this.server.on("connection", (ws) => this.handleClientConnection(ws));
+            this.server.on("listening", () => {
+                this.updateStatusBar();
+                vscode.window.showInformationMessage("VS Code Focus Fortress WebSocket server started");
+            });
+            this.server.on("error", (err) => {
+                vscode.window.showErrorMessage(`VS Code Focus Fortress WebSocket error: ${err.message}`);
+            });
+            // start heartbeat timer
+            if (this.heartbeatTimer)
+                clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = setInterval(() => {
+                this.broadcast({ type: "heartbeat", active: this.isActive });
+            }, Math.max(1000, this.heartbeatIntervalSec * 1000));
+            // initial active state detection
+            this.onUserActivity();
+            this.updateStatusBar();
+            return true;
+        }
+        catch (err) {
+            vscode.window.showErrorMessage(`Failed to start VS Code Focus Fortress server: ${(_a = err === null || err === void 0 ? void 0 : err.message) !== null && _a !== void 0 ? _a : err}`);
+            this.stop(); // ensure clean
+            return false;
+        }
+    }
+    stop() {
+        // clear timers
+        if (this.heartbeatTimer) {
+            clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = null;
+        }
+        if (this.inactivityTimer) {
+            clearTimeout(this.inactivityTimer);
+            this.inactivityTimer = null;
+        }
+        // close clients
+        for (const c of this.clients) {
+            try {
+                c.close();
+            }
+            catch { }
+        }
+        this.clients.clear();
+        // close server
+        if (this.server) {
+            try {
+                this.server.close();
+            }
+            catch { }
+            this.server = null;
+        }
+        this.setActive(false);
+        this.updateStatusBar();
+        vscode.window.showInformationMessage("VS Code Focus Fortress server stopped.");
+    }
+    restart() {
+        this.stop();
+        // small delay to let socket close
+        setTimeout(() => {
+            this.start();
+        }, 250);
+    }
+    statusString() {
+        return this.server ? `running (port ${this.port})` : "stopped";
+    }
+    dispose() {
+        this.stop();
+        this.disposables.forEach((d) => d.dispose());
+        try {
+            this.statusBarItem.dispose();
+        }
+        catch { }
+    }
 }
-/**
- * Called when extension deactivates.
- */
+exports.FocusBridgeServer = FocusBridgeServer;
+// ---------------- extension activation ----------------
+let bridge = null;
+function activate(context) {
+    bridge = new FocusBridgeServer(context);
+    // Register commands: start / stop / restart / status
+    context.subscriptions.push(vscode.commands.registerCommand("focusFortress.start", () => {
+        const ok = bridge === null || bridge === void 0 ? void 0 : bridge.start();
+        if (ok)
+            vscode.window.showInformationMessage("VS Code Focus Fortress started.");
+    }), vscode.commands.registerCommand("focusFortress.stop", () => {
+        bridge === null || bridge === void 0 ? void 0 : bridge.stop();
+    }), vscode.commands.registerCommand("focusFortress.restart", () => {
+        bridge === null || bridge === void 0 ? void 0 : bridge.restart();
+        vscode.window.showInformationMessage("VS Code Focus Fortress restarted.");
+    }), vscode.commands.registerCommand("focusFortress.status", () => {
+        var _a;
+        const s = (_a = bridge === null || bridge === void 0 ? void 0 : bridge.statusString()) !== null && _a !== void 0 ? _a : "unknown";
+        vscode.window.showInformationMessage(`VS Code Focus Fortress status: ${s}`);
+    }));
+    // Auto-start if config says so
+    const cfg = vscode.workspace.getConfiguration("focusFortress");
+    const autoStart = Boolean(cfg.get("autoStart", true));
+    if (autoStart) {
+        // defer start slightly to allow other extensions to initialize
+        setTimeout(() => {
+            bridge === null || bridge === void 0 ? void 0 : bridge.start();
+        }, 500);
+    }
+    context.subscriptions.push({
+        dispose: () => {
+            bridge === null || bridge === void 0 ? void 0 : bridge.dispose();
+        },
+    });
+}
 function deactivate() {
-    stopServer();
+    if (bridge) {
+        bridge.dispose();
+        bridge = null;
+    }
 }
 //# sourceMappingURL=extension.js.map

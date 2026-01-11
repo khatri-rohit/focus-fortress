@@ -1,8 +1,9 @@
 {
   "name": "vscode-focus-bridge",
-  "displayName": "VS Code Focus Bridge",
+  "displayName": "VS Code Focus Fortress",
   "publisher": "RohitKhatri",
   "version": "0.0.1",
+  "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.70.0"
   },
@@ -17,29 +18,52 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "focusFortress.start",
+        "title": "Focus Fortress: Start server"
+      },
+      {
+        "command": "focusFortress.stop",
+        "title": "Focus Fortress: Stop server"
+      },
+      {
+        "command": "focusFortress.restart",
+        "title": "Focus Fortress: Restart server"
+      },
+      {
+        "command": "focusFortress.status",
+        "title": "Focus Fortress: Show status"
+      }
+    ],
     "configuration": {
       "type": "object",
-      "title": "Focus Bridge",
+      "title": "Focus Fortress",
       "properties": {
-        "focusBridge.port": {
+        "focusFortress.port": {
           "type": "number",
           "default": 9876,
           "description": "Local WebSocket server port for Chrome to connect to."
         },
-        "focusBridge.heartbeatIntervalSec": {
+        "focusFortress.heartbeatIntervalSec": {
           "type": "number",
           "default": 10,
-          "description": "Seconds between active heartbeats while VS Code is active."
+          "description": "Seconds between heartbeat messages."
         },
-        "focusBridge.inactivityTimeoutSec": {
+        "focusFortress.inactivityTimeoutSec": {
           "type": "number",
           "default": 120,
           "description": "Seconds of inactivity after which 'active' becomes false."
         },
-        "focusBridge.secretToken": {
+        "focusFortress.secretToken": {
           "type": "string",
           "default": "",
           "description": "Optional secret token that clients must send as first message for simple auth."
+        },
+        "focusFortress.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start the Focus Fortress WebSocket server when VS Code starts."
         }
       }
     }
