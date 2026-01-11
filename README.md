@@ -106,7 +106,7 @@ graph LR
 
 - ✅ **100% Local** - No external servers or data transmission
 - ✅ **No Tracking** - Zero analytics or telemetry
-- ✅ **Open Source** - [View code](https://github.com/RohitKhatri/focus-fortress)
+- ✅ **Open Source** - [View code](https://github.com/khatri-rohit/focus-fortress)
 
 ## 📊 System Requirements
 
