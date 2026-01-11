@@ -1,4 +1,3 @@
-// content.ts
 import browser from "./lib/api";
 
 if ((window as any).__FOCUS_BLOCKER_INIT__) {

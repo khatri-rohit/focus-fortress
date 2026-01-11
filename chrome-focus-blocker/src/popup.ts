@@ -1,4 +1,3 @@
-// popup.ts
 import browser from "./lib/api";
 
 const siteInput = document.getElementById("siteInput") as HTMLInputElement;

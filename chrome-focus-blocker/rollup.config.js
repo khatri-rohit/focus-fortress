@@ -1,4 +1,3 @@
-// rollup.config.js — single-file IIFE builds per entry (no code-splitting)
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
