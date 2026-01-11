@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
   "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "16": "focus16.png",
+    "48": "focus48.png",
+    "128": "focus128.png"
   },
-  "name": "Focus Blocker",
+  "name": "Focus Fortress",
   "version": "1.0.0",
   "description": "Blocks distracting sites when you're actively coding in VS Code (WebSocket).",
   "permissions": ["storage", "scripting", "tabs", "notifications"],

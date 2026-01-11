@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Focus Blocker (Firefox)",
+  "name": "Focus Fortress",
   "version": "1.0.0",
   "description": "Blocks distracting sites when you're actively coding in VS Code (WebSocket).",
   "permissions": ["storage", "tabs", "notifications", "<all_urls>"],
@@ -13,7 +13,7 @@
       "run_at": "document_idle"
     }
   ],
-  "icons": { "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "icons": { "48": "icons/focus48.png", "128": "icons/focus128.png" },
   "applications": {
     "gecko": {
       "id": "focus-blocker@example.com",

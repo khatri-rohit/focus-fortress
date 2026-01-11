@@ -92,6 +92,50 @@ addBtn.addEventListener("click", async () => {
   if (res?.ok) {
     siteInput.value = "";
     showMsg("Added " + res.host);
+
+    try {
+      // Query active tabs in all windows to find pages matching this host
+      const allTabs = await browser.tabs.query({});
+      const matching = allTabs.filter((t) => {
+        try {
+          if (!t.url) return false;
+          const u = new URL(t.url);
+          // match exact host or subdomain -> same logic as background's isUrlBlocked
+          return u.hostname === res.host || u.hostname.endsWith("." + res.host);
+        } catch {
+          return false;
+        }
+      });
+
+      if (matching.length > 0) {
+        const promptText =
+          matching.length === 1
+            ? `You have 1 open tab for this site. Reload it now to apply the block immediately?`
+            : `You have ${matching.length} open tabs for this site. Reload them now to apply the block immediately?`;
+
+        if (confirm(promptText)) {
+          await Promise.all(
+            matching.map((t) => {
+              try {
+                return browser.tabs.reload(t.id as number);
+              } catch {
+                return Promise.resolve();
+              }
+            })
+          );
+          showMsg(
+            `Reloaded ${matching.length} tab${matching.length > 1 ? "s" : ""}`
+          );
+        } else {
+          showMsg(`Added. Reload tabs later to apply changes.`);
+        }
+      } else {
+        showMsg("Added. No open tabs for that host.");
+      }
+    } catch (err) {
+      showMsg("Added. (Could not check open tabs)");
+    }
+
     loadAndRender();
   } else if (res?.reason === "exists") showMsg("Already blocked");
   else showMsg("Failed to add");
