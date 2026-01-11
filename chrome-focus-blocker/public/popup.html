@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Focus Blocker</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h2>Focus Blocker</h2>
+
+      <div class="row">
+        <label for="siteInput"
+          >Block site (auto-filled with current tab):</label
+        >
+        <input
+          id="siteInput"
+          type="text"
+          placeholder="e.g. hianime.do or https://hianime.do"
+        />
+        <div class="btn-row">
+          <button id="addBtn">Add</button>
+          <button id="addCurrentBtn" title="Use current tab URL">
+            Add Current
+          </button>
+        </div>
+        <div id="popupMsg" class="msg"></div>
+      </div>
+
+      <div class="status-row">
+        <div><strong>WebSocket:</strong> <span id="wsStatus">—</span></div>
+        <div><strong>Focus Mode:</strong> <span id="focusStatus">—</span></div>
+      </div>
+
+      <hr />
+
+      <div>
+        <h3>Blocked sites</h3>
+        <div id="blockedList" class="list">Loading…</div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

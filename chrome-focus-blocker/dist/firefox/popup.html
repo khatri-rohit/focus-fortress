@@ -16,7 +16,7 @@
         <input
           id="siteInput"
           type="text"
-          placeholder="e.g. facebook.com or https://facebook.com/path"
+          placeholder="e.g. facebook.com or https://facebook.com"
         />
         <div class="btn-row">
           <button id="addBtn">Add</button>
@@ -24,7 +24,7 @@
             Add Current
           </button>
         </div>
-        <div id="addMsg" class="msg"></div>
+        <div id="popupMsg" class="msg"></div>
       </div>
 
       <div class="status-row">
@@ -38,11 +38,8 @@
         <h3>Blocked sites</h3>
         <div id="blockedList" class="list">Loading…</div>
       </div>
-
-      <div class="footer">
-        <small>Manual additions stored locally.</small>
-      </div>
     </div>
+
     <script src="popup.js"></script>
   </body>
 </html>

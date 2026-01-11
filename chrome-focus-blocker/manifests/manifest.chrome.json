@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "name": "Focus Blocker",
+  "version": "1.0.0",
+  "description": "Blocks distracting sites when you're actively coding in VS Code (WebSocket).",
+  "permissions": ["storage", "scripting", "tabs", "notifications"],
+  "host_permissions": [],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
