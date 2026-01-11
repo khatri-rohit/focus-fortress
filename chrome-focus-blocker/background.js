@@ -10,15 +10,13 @@ let focusMode = false;
 let ws = null;
 let wsConnected = false;
 let manualOverride = null; // boolean or null
-let blockedSites = []; // array of host strings, e.g. "facebook.com"
+let blockedSites = []; // array of host strings
 
 // ---------- Utility: normalize a user-provided URL or hostname ----------
 function normalizeToHostname(input) {
   if (!input || typeof input !== "string") return null;
   input = input.trim();
-  // allow "facebook.com" or "https://facebook.com/path"
   try {
-    // If input doesn't contain protocol, URL will throw, so add http://
     const u = input.includes("://")
       ? new URL(input)
       : new URL("http://" + input);
