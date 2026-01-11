@@ -96,10 +96,10 @@ export class FocusBridgeServer {
 
   private updateStatusBar() {
     if (this.server) {
-      this.statusBarItem.text = `$(plug) FocusBridge: running (${this.port})`;
+      this.statusBarItem.text = `$(plug) Focus Fortress: running (${this.port})`;
       this.statusBarItem.color = undefined;
     } else {
-      this.statusBarItem.text = `$(debug-disconnect) FocusBridge: stopped`;
+      this.statusBarItem.text = `$(debug-disconnect) Focus Fortress: stopped`;
       this.statusBarItem.color = new vscode.ThemeColor(
         "statusBarItem.warningForeground"
       );
