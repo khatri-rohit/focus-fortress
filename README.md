@@ -100,7 +100,7 @@ graph LR
 - Check VS Code status bar for server status
 - Try restarting VS Code and Chrome
 
-[Report Troubleshooting](https://thisisrohit.com/contact)
+[Report Troubleshooting](https://thisisrohit.dev/contact)
 
 ## 🔒 Privacy
 
