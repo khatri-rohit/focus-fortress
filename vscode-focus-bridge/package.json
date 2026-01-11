@@ -2,7 +2,7 @@
   "name": "vscode-focus-bridge",
   "displayName": "VS Code Focus Fortress",
   "publisher": "RohitKhatri",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.70.0"
