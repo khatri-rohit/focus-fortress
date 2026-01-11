@@ -30,7 +30,6 @@ function normalizeToHostname(input) {
   }
 }
 
-// ---------- Storage helpers ----------
 function loadBlockedSitesFromStorage() {
   chrome.storage.local.get({ blockedSites: [] }, (res) => {
     blockedSites = Array.isArray(res.blockedSites) ? res.blockedSites : [];
@@ -61,7 +60,6 @@ function removeBlockedSiteRaw(host) {
   return { ok: true, host };
 }
 
-// ---------- Matching ----------
 function isUrlBlocked(url) {
   if (!url) return false;
   try {
@@ -171,7 +169,6 @@ function updateAllTabs() {
   });
 }
 
-// ---------- Storage change listener (in case popup updates storage directly) ----------
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.blockedSites) {
     blockedSites = Array.isArray(changes.blockedSites.newValue)
@@ -181,25 +178,28 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// ---------- Message listener API for popup ----------
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // popup asked for status (full info)
   if (msg?.cmd === "popupRequestStatus") {
     sendResponse({ wsConnected, focusMode, blockedSites });
-    return; // synchronous response
+    return; // synchronous
   }
 
+  // Add site
   if (msg?.cmd === "addBlockedSite") {
     const result = addBlockedSiteRaw(msg.site);
     sendResponse(result);
     return;
   }
 
+  // Remove site
   if (msg?.cmd === "removeBlockedSite") {
     const result = removeBlockedSiteRaw(msg.host);
     sendResponse(result);
     return;
   }
 
+  // Manual override
   if (msg?.cmd === "overrideFocus") {
     manualOverride = msg.focus;
     focusMode = !!msg.focus;
@@ -215,12 +215,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg?.cmd === "requestStatus") {
-    sendResponse({ focus: focusMode });
+    // get sender.tab.url if available (messages from content scripts will include sender.tab)
+    const tabUrl = sender?.tab?.url || null;
+    const shouldBlock = !!(tabUrl && isUrlBlocked(tabUrl) && focusMode);
+    sendResponse({ focus: shouldBlock });
     return;
   }
 });
 
-// ---------- Initialization ----------
 loadBlockedSitesFromStorage();
-// ensure update of tabs after a small delay once service worker started and blockedSites loaded
 setTimeout(updateAllTabs, 1000);

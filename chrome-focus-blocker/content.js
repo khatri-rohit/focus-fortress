@@ -39,7 +39,7 @@
       "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial";
     card.innerHTML = `
       <div style="font-weight:700; font-size:28px; margin-bottom:8px;">You're currently working</div>
-      <div style="opacity:0.95; font-size:16px;">Don't get distracted — focus on your coding session in VS Code.</div>
+      <div style="opacity:0.95; font-size:16px;">You’re currently working. Don’t get distracted.</div>
     `;
 
     overlay.appendChild(card);
